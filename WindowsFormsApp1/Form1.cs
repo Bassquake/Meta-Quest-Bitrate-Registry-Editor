@@ -6,10 +6,10 @@ using System.IO;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
-namespace WindowsFormsApp1
+namespace FormBitrateEditor
 {
 
-    public partial class Form1 : Form
+    public partial class FormEditor : Form
     {
         private const string OculusRegKey = "HKEY_CURRENT_USER\\SOFTWARE\\Oculus\\RemoteHeadset";
         private const string OdtCli = "C:\\Program Files\\Oculus\\Support\\oculus-diagnostics\\OculusDebugToolCLI.exe\"";
@@ -17,11 +17,14 @@ namespace WindowsFormsApp1
         private const string HevcValueName = "HEVC";
         private const string DbrValueName = "DBR";
         private const string DbrMaxValueName = "DBRMax";
+        private const string NumSlicesValueName = "numSlices";
+        private const string LinkSharpeningValueName = "LinkSharpeningEnabled";
 
         private Boolean hevcToggle;
         private Boolean dbrToggle;
+        private Boolean sharpenToggle;
 
-        public Form1()
+        public FormEditor()
         {
             InitializeComponent();
 
@@ -37,17 +40,36 @@ namespace WindowsFormsApp1
                 dbmTextBox.Text = dbrMaxValue.ToString();
             }
 
+            Object numSlicesValue = Registry.GetValue(OculusRegKey, NumSlicesValueName, null);
+            if (numSlicesValue != null && numSlicesValue is int)
+            {
+                numslicesTextBox.Text = numSlicesValue.ToString();
+            }
+
+            Object sharpenValue = Registry.GetValue(OculusRegKey, LinkSharpeningValueName, null);
+            if (sharpenValue != null && sharpenValue is int && int.Parse(sharpenValue.ToString()) == 0)
+            {
+                sharpenToggle = false;
+                sharpenBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.off_button;
+            }
+            else
+            {
+                sharpenToggle = true;
+                sharpenBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.on_button;
+            }
+
             Object hevcValue = Registry.GetValue(OculusRegKey, HevcValueName, null);
             if (hevcValue != null && hevcValue is int && int.Parse(hevcValue.ToString()) == 0)
             {
                 hevcToggle = false;
                 hevcBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.off_button;
-            }
+            }            
+
             else
             {
                 hevcToggle = true;
                 hevcBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.on_button;
-            }
+            }            
 
             Object dbrValue = Registry.GetValue(OculusRegKey, DbrValueName, null);
             if (dbrValue != null && dbrValue is int && int.Parse(dbrValue.ToString()) == 1)
@@ -62,7 +84,7 @@ namespace WindowsFormsApp1
             }
         }
 
-        private void Form1_Click(object sender, EventArgs e)
+        private void FormEditor_Click(object sender, EventArgs e)
         {
             this.ActiveControl = null;
         }
@@ -94,12 +116,31 @@ namespace WindowsFormsApp1
 
         private void dbmTextBox_Leave(object sender, EventArgs e)
         {
-            Registry.SetValue(OculusRegKey, DbrMaxValueName, int.Parse(dbmTextBox.Text));
+            if (!String.IsNullOrEmpty(dbmTextBox.Text))
+            {
+                Registry.SetValue(OculusRegKey, DbrMaxValueName, int.Parse(dbmTextBox.Text));
+            }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void numslicesTextBox_Leave(object sender, EventArgs e)
+        {
+            if (!String.IsNullOrEmpty(numslicesTextBox.Text))
+            {
+                Registry.SetValue(OculusRegKey, NumSlicesValueName, int.Parse(numslicesTextBox.Text));
+            }
+        }
+
+        private void FormEditor_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void sharpenBtn_Click(object sender, EventArgs e)
+        {
+            sharpenToggle = !sharpenToggle;
+            sharpenBtn.BackgroundImage = sharpenToggle ? MetaQuestBitrateRegistryEditor.Properties.Resources.on_button
+                : MetaQuestBitrateRegistryEditor.Properties.Resources.off_button;
+            Registry.SetValue(OculusRegKey, LinkSharpeningValueName, sharpenToggle ? 1 : 0);
         }
 
         private void hevcBtn_Click(object sender, EventArgs e)
@@ -173,6 +214,16 @@ namespace WindowsFormsApp1
                 key.DeleteValue(DbrMaxValueName);
             }
 
+            if (key.GetValue(NumSlicesValueName) != null)
+            {
+                key.DeleteValue(NumSlicesValueName);
+            }
+
+            if (key.GetValue(LinkSharpeningValueName) != null)
+            {
+                key.DeleteValue(LinkSharpeningValueName);
+            }
+
             key?.Close();
 
             bitrateTextBox.Text = "";
@@ -181,6 +232,9 @@ namespace WindowsFormsApp1
             hevcBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.on_button;
             dbrToggle = false;
             dbrBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.off_button;
+            numslicesTextBox.Text = "";
+            sharpenToggle = true;
+            sharpenBtn.BackgroundImage = MetaQuestBitrateRegistryEditor.Properties.Resources.on_button;
         }
 
         private void aswOffBtn_Click(object sender, EventArgs e)
