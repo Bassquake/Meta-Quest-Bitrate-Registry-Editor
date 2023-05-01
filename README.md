@@ -1,4 +1,4 @@
-# MetaQuestBitrateRegistryEditor
+# Meta Quest Bitrate Registry Editor
 
 Simple Meta Quest bitrate registry editor.
 
